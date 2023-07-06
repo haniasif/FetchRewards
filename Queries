@@ -1,0 +1,112 @@
+create database FetchRewards;
+drop database FetchRewards;
+
+Use FetchRewards;
+
+create table Receipts(
+UUID Integer,
+bonusPointsEarned Integer,
+bonusPointsEarnedReason varchar(20) not null,
+createDate Date,
+dateScanned Date,
+finishedDate Date,
+modifyDate Date,
+pointsAwardedDate Date,
+pointsEarned Integer,
+purchaseDate Date,
+purchasedItemCount Integer,
+rewardsReceiptStatus varchar(20) not null,
+totalSpent Integer,
+primary key(UUID)
+);
+
+create table ReceiptItems(
+ UUID int,
+itemName varchar(20) not null,
+itemPrice Integer,
+itemQuantity Integer,
+primary key(UUID)
+);
+
+create table Users(
+UUID int,
+state varchar(20) not null,
+createdDate Date,
+lastLogin Date,
+role varchar(20) not null,
+active Boolean,
+primary key(UUID)
+);
+
+create table brands(
+UUID int,
+barcode varchar(20)  not null, 
+brandCode varchar(20) not null,
+category varchar(20) not null, 
+categoryCode varchar(20) not null,
+cpg varchar(20)not null,
+topBrand Boolean,
+brandName varchar(20) not null,
+primary key(UUID)
+);
+/*What are the top 5 brands by receipts scanned for most recent month?*/
+select br.name, COUNT(*) AS receiptcount
+from Brands AS br
+join Receipts AS r ON br.id = r.brandId
+where DATE_TRUNC('month', r.dateScanned) = DATE_TRUNC('month', CURRENT_DATE)
+group by br.name
+order by receiptCount DESC
+limit 5;
+
+/*How does the ranking of the top 5 brands by receipts scanned for the recent month compare to the ranking for the previous month?*/
+select recent.name AS recent_month_brand, recent.receiptCount AS recent_month_receipts,
+       previous.name AS previous_month_brand, previous.receiptCount AS previous_month_receipts
+from
+  (select br.name, COUNT(*) AS receiptCount
+   from Brands AS br
+   join Receipts AS r ON br._id = r.brandId
+   where DATE_TRUNC('month', r.dateScanned) = DATE_TRUNC('month', current_date)
+   group by br.name
+   order by receiptCount DESC
+   limit 5) AS recent
+left join
+  (select br.name, COUNT(*) AS receiptCount
+   from Brands AS br
+   join Receipts AS r ON br._id = r.brandId
+   where DATE_TRUNC('month', r.dateScanned) = DATE_TRUNC('month', current_date-interval '1 month')
+   group by br.name
+   order by receiptCount DESC
+   limit 5) AS previous
+ON recent.name = previous.name;
+
+/*When considering average spend from receipts with 'rewardsReceiptStatus’ of ‘Accepted’ or ‘Rejected’, which is greater?*/
+select rewardsReceiptStatus, avg(totalSpent) AS averageSpend
+from Receipts
+where rewardsReceiptStatus IN ('Accepted', 'Rejected')
+group by rewardsReceiptStatus;
+
+/*When considering total number of items purchased from receipts with 'rewardsReceiptStatus’ of ‘Accepted’ or ‘Rejected’, which is greater?*/
+select rewardsReceiptStatus, SUM(purchasedItemCount) AS totalItemsPurchased
+from Receipts
+where rewardsReceiptStatus IN ('Accepted', 'Rejected')
+group by rewardsReceiptStatus;
+
+/*Which brand has the most spend among users who were created within the past 6 months?*/
+select br.name, SUM(r.totalSpent) AS totalSpend
+from Brands AS br
+join Receipts AS r ON br._id = r.brandId
+join Users AS u ON r.userId = u._id
+where u.createdDate >= CURRENT_DATE - INTERVAL '6 months'
+group by br.name
+order by totalSpend DESC
+limit 1;
+
+/*Which brand has the most transactions among users who were created within the past 6 months?*/
+select br.name, COUNT(*) AS transactionCount
+from Brands AS br
+join Receipts AS r ON br._id = r.brandId
+join Users AS u ON r.userId = u._id
+where u.createdDate >= CURRENT_DATE - INTERVAL '6 months'
+group by br.name
+order by transactionCount DESC
+limit 1;
