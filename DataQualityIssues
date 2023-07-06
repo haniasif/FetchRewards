@@ -1,0 +1,24 @@
+import queries as qr
+
+# Load the data into pandas DataFrames
+receipts_df = qr.read_csv('receipts.csv')
+users_df = qr.read_csv('users.csv')
+brands_df = qr.read_csv('brands.csv')
+
+# Data Quality Issues - Receipts DataFrame
+# 1. Missing values
+missing_values = receipts_df.isnull().sum()
+print("Receipts - Missing Values:")
+print(missing_values)
+
+# Data Quality Issues - Users DataFrame
+# 1. Missing values
+missing_values = users_df.isnull().sum()
+print("Users - Missing Values:")
+print(missing_values)
+
+# Data Quality Issues - Brands DataFrame
+# 1. Missing values
+missing_values = brands_df.isnull().sum()
+print("Brands - Missing Values:")
+print(missing_values)
